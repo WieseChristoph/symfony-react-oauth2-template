@@ -1,0 +1,26 @@
+services:
+  api:
+    build: ./api
+    volumes:
+      - ./api:/var/www/app
+    ports:
+      - 8080:8080
+    env_file:
+      - ./api/.env
+      - ./api/.env.dev
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: api
+      POSTGRES_PASSWORD: api
+      POSTGRES_USER: api
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "api", "-U", "api"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - database_data:/var/lib/postgresql/data:rw
+
+volumes:
+  database_data:
