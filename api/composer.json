@@ -100,7 +100,7 @@
             "@php ./vendor/bin/phpstan analyse --configuration=phpstan.neon"
         ],
         "test:phpunit": [
-            "@php ./vendor/bin/phpunit --testsuit=unit"
+            "@php ./vendor/bin/phpunit --configuration phpunit.xml --testsuit=unit"
         ]
     },
     "conflict": {
