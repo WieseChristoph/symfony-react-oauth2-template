@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  api-ci:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,3 +35,23 @@ jobs:
       run: composer install --prefer-dist --no-progress
     - name: Run test suite
       run: composer run-script test
+  frontend-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run checks
+        run: pnpm run check
