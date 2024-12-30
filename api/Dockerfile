@@ -17,6 +17,7 @@ FROM alpine AS runner
 WORKDIR /var/www/app
 
 RUN apk add --no-cache \
+  bash \
   curl \
   nginx \
   php84 \
@@ -31,6 +32,7 @@ RUN apk add --no-cache \
   php84-mysqli \
   php84-opcache \
   php84-openssl \
+  php84-pgsql \
   php84-phar \
   php84-session \
   php84-tokenizer \
