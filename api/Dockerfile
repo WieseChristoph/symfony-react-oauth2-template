@@ -12,48 +12,56 @@ RUN composer install \
     --no-dev \
     --prefer-dist
 
-FROM alpine AS runner
+FROM debian AS runner
 
 WORKDIR /var/www/app
 
-RUN apk add --no-cache \
-  bash \
-  curl \
-  nginx \
-  php84 \
-  php84-ctype \
-  php84-curl \
-  php84-dom \
-  php84-fileinfo \
-  php84-fpm \
-  php84-gd \
-  php84-intl \
-  php84-mbstring \
-  php84-mysqli \
-  php84-opcache \
-  php84-openssl \
-  php84-pgsql \
-  php84-phar \
-  php84-session \
-  php84-tokenizer \
-  php84-xml \
-  php84-xmlreader \
-  php84-xmlwriter \
-  supervisor \
-  composer
+RUN apt-get update -q && \
+    apt-get install -y wget apt-transport-https lsb-release ca-certificates
 
-COPY ./config/docker/nginx/default.conf /etc/nginx/http.d/
+# Add PHP repository
+RUN wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg && \
+    echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" > /etc/apt/sources.list.d/php.list
 
-COPY ./config/docker/php/fpm-pool.conf /etc/php84/php-fpm.d/www.conf
+RUN apt-get update -q && apt-get install -y --fix-missing \
+    curl \
+    nginx \
+    php8.3 \
+    php8.3-ctype \
+    php8.3-curl \
+    php8.3-dom \
+    php8.3-fileinfo \
+    php8.3-fpm \
+    php8.3-gd \
+    php8.3-intl \
+    php8.3-mbstring \
+    php8.3-mysqli \
+    php8.3-opcache \
+    php8.3-pgsql \
+    php8.3-phar \
+    php8.3-tokenizer \
+    php8.3-xml \
+    php8.3-xmlreader \
+    php8.3-xmlwriter \
+    supervisor
 
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN useradd --shell /bin/bash api
+
+# Copy composer from the composer image
+COPY --from=builder /usr/bin/composer /usr/bin/composer
+
+COPY ./config/docker/nginx/default.conf /etc/nginx/conf.d/
+COPY ./config/docker/php/fpm-pool.conf /etc/php/8.3/fpm/pool.d/www.conf
 COPY ./config/docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-RUN chown -R nobody:nobody /var/www/app /run /var/lib/nginx /var/log/nginx /var/log/php84
+RUN chown -R api:api /var/www/app /run /var/lib/nginx /var/log/nginx
 
-USER nobody
+USER api:api
 
-COPY --chown=nobody --from=builder /app/vendor .
-COPY --chown=nobody . /var/www/app/
+COPY --chown=api:api --from=builder /app/vendor .
+COPY --chown=api:api . /var/www/app/
 
 EXPOSE 8080
 
