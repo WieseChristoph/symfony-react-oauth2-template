@@ -14,6 +14,8 @@ services:
       POSTGRES_DB: api
       POSTGRES_PASSWORD: api
       POSTGRES_USER: api
+    ports:
+      - 5432:5432
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "api", "-U", "api"]
       timeout: 5s
