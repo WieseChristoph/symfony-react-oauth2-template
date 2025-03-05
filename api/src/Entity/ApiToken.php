@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(columns: ['token'])]
 class ApiToken
 {
-    private const EXPIRY_DURATION_SECONDS = 2629800 ;
+    private const EXPIRY_DURATION_SECONDS = 2629800; // One month
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
