@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Service\OAuth2\Client;
+namespace App\Security\OAuth2\Client;
 
 use App\Dto\OAuth2\UserInformation;
 use UnexpectedValueException;

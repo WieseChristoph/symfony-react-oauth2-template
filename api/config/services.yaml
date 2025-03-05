@@ -24,13 +24,13 @@ services:
     # please note that last definitions always *replace* previous ones
 
     # oauth2 clients
-    App\Service\OAuth2\Client\GoogleOAuth2Client:
+    App\Security\OAuth2\Client\GoogleOAuth2Client:
         arguments:
             $clientId: '%env(OAUTH_GOOGLE_CLIENT_ID)%'
             $clientSecret: '%env(OAUTH_GOOGLE_CLIENT_SECRET)%'
             $redirectUri: '%env(OAUTH_GOOGLE_REDIRECT_URI)%'
 
-    App\Service\OAuth2\Client\DiscordOAuth2Client:
+    App\Security\OAuth2\Client\DiscordOAuth2Client:
         arguments:
             $clientId: '%env(OAUTH_DISCORD_CLIENT_ID)%'
             $clientSecret: '%env(OAUTH_DISCORD_CLIENT_SECRET)%'

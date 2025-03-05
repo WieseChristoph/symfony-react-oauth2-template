@@ -14,14 +14,15 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
         oauth2:
-            pattern: ^/api/auth/(?!logout)([a-zA-Z\d]+)/?(callback)?$
+            pattern: ^/api/auth/(?!logout)([a-zA-Z\d]+)/?(callback)?
             security: false
         api:
             pattern: ^/api/
             lazy: true
+            stateless: true
             provider: app_user_provider
-            logout:
-                path: api_auth_logout
+            access_token:
+                token_handler: App\Security\ApiTokenHandler
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -32,8 +33,8 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+        - { path: ^/api/auth/(?!logout)([a-zA-Z\d]+)/?(callback)?/, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: ROLE_USER }
 
 when@test:
     security:

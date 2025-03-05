@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Controller\Api;
 
+use App\Entity\ApiToken;
+use App\Repository\ApiTokenRepository;
 use App\Repository\UserRepository;
-use App\Service\OAuth2\Client\AbstractOAuth2Client;
-use App\Service\OAuth2\Client\DiscordOAuth2Client;
-use App\Service\OAuth2\Client\GoogleOAuth2Client;
+use App\Security\OAuth2\Client\AbstractOAuth2Client;
+use App\Security\OAuth2\Client\DiscordOAuth2Client;
+use App\Security\OAuth2\Client\GoogleOAuth2Client;
 use Doctrine\ORM\EntityManagerInterface;
-use LogicException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,6 +19,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 use function is_string;
 
+#[Route(path: '/auth', name: 'auth_')]
 class AuthController extends AbstractController
 {
     private const OAUTH2_STATE_KEY = 'oauth2session';
@@ -32,6 +34,7 @@ class AuthController extends AbstractController
         DiscordOAuth2Client $discordClient,
         private readonly EntityManagerInterface $entityManager,
         private readonly UserRepository $userRepository,
+        private readonly ApiTokenRepository $apiTokenRepository,
     ) {
         $this->providers = [
             $googleClient->getProviderName() => $googleClient,
@@ -39,18 +42,38 @@ class AuthController extends AbstractController
         ];
     }
 
-    #[Route('/api/auth/logout', 'api_auth_logout')]
-    public function logout(): JsonResponse
+    #[Route('/logout', 'logout')]
+    public function logout(Request $request): JsonResponse
     {
-        throw new LogicException('This method can be blank - it will be intercepted by the firewall.');
+        $user = $this->getUser();
+        if ($user === null) {
+            return $this->json(['success' => false, 'error' => 'User not found'], 500);
+        }
+
+        $authorizationHeader = $request->headers->get('Authorization');
+
+        $bearerToken = null;
+        if ($authorizationHeader !== null && preg_match('/Bearer\s(\S+)/', $authorizationHeader, $matches)) {
+            $bearerToken = $matches[1];
+        }
+
+        $apiToken = $this->apiTokenRepository->findOneBy(['token' => $bearerToken, 'user' => $user]);
+        if ($apiToken === null) {
+            return $this->json(['success' => false, 'error' => 'API token not found'], 500);
+        }
+
+        $this->entityManager->remove($apiToken);
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true]);
     }
 
-    #[Route('/api/auth/{provider}', 'api_auth_redirect')]
+    #[Route('/{provider}', 'redirect')]
     public function beginAuth(string $provider, Request $request): Response
     {
         $oauth2Client = $this->providers[$provider] ?? null;
         if ($oauth2Client === null) {
-            return $this->json(['error' => 'Invalid provider'], 400);
+            return $this->json(['success' => false, 'error' => 'Invalid provider'], 400);
         }
 
         $authUrl = $oauth2Client->getAuthorizationUrl();
@@ -59,25 +82,25 @@ class AuthController extends AbstractController
         return $this->redirect($authUrl);
     }
 
-    #[Route('/api/auth/{provider}/callback', 'api_auth_callback')]
+    #[Route('/{provider}/callback', 'callback')]
     public function callback(string $provider, Request $request): JsonResponse
     {
         $oauth2Client = $this->providers[$provider] ?? null;
         if ($oauth2Client === null) {
-            return $this->json(['error' => 'Invalid provider'], 400);
+            return $this->json(['success' => false, 'error' => 'Invalid provider'], 400);
         }
 
         $state = $request->query->get('state');
         if (!is_string($state) || $state !== $request->getSession()->get(self::OAUTH2_STATE_KEY)) {
             $request->getSession()->remove(self::OAUTH2_STATE_KEY);
 
-            return $this->json(['error' => 'Invalid state'], 400);
+            return $this->json(['success' => false, 'error' => 'Invalid state'], 400);
         }
         $request->getSession()->remove(self::OAUTH2_STATE_KEY);
 
         $code = $request->query->get('code');
         if (!is_string($code)) {
-            return $this->json(['error' => 'Authorization code missing'], 400);
+            return $this->json(['success' => false, 'error' => 'Authorization code missing'], 400);
         }
 
         $accessToken = $oauth2Client->getAccessToken($code);
@@ -92,6 +115,13 @@ class AuthController extends AbstractController
             $this->entityManager->flush();
         }
 
-        return $this->json(['user' => $userInfo]);
+        $apiToken = (new ApiToken())
+            ->setUser($user)
+        ;
+
+        $this->entityManager->persist($apiToken);
+        $this->entityManager->flush();
+
+        return $this->json(['success' => true, 'token' => $apiToken->getToken()]);
     }
 }

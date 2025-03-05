@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Carbon\CarbonImmutable;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -33,11 +35,21 @@ class User implements UserInterface
     #[ORM\Column(type: Types::STRING, nullable: true)]
     private ?string $avatarUrl = null;
 
-    /**
-     * @var list<string> The user roles
-     */
+    /** @var list<string> The user roles */
     #[ORM\Column(type: Types::JSON)]
     private array $roles = [];
+
+    /** @var Collection<int, ApiToken> */
+    #[ORM\OneToMany(targetEntity: ApiToken::class, mappedBy: 'user', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $apiTokens;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    private CarbonImmutable $createdAt;
+
+    public function __construct()
+    {
+        $this->setCreatedAt(CarbonImmutable::now());
+    }
 
     public function getId(): int
     {
@@ -130,5 +142,43 @@ class User implements UserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    /**
+     * @return Collection<int, ApiToken>
+     */
+    public function getApiTokens(): Collection
+    {
+        return $this->apiTokens;
+    }
+
+    public function addApiToken(ApiToken $apiToken): self
+    {
+        if (!$this->apiTokens->contains($apiToken)) {
+            $this->apiTokens[] = $apiToken;
+        }
+
+        return $this;
+    }
+
+    public function removeApiToken(ApiToken $apiToken): self
+    {
+        if ($this->apiTokens->contains($apiToken)) {
+            $this->apiTokens->removeElement($apiToken);
+        }
+
+        return $this;
+    }
+
+    public function getCreatedAt(): CarbonImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(CarbonImmutable $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
     }
 }
