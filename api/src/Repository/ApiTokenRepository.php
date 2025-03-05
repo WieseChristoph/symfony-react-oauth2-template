@@ -17,4 +17,17 @@ class ApiTokenRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, ApiToken::class);
     }
+
+    public function deleteExpiredTokens(): int
+    {
+        /** @var int $deletedTokenCount */
+        $deletedTokenCount = $this->createQueryBuilder('t')
+            ->delete()
+            ->where('t.expiresAt <= CURRENT_TIMESTAMP()')
+            ->getQuery()
+            ->execute()
+        ;
+
+        return $deletedTokenCount;
+    }
 }
