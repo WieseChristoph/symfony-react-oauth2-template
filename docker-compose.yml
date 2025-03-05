@@ -5,14 +5,19 @@ services:
       - ./api:/var/www/app
     ports:
       - 8080:8080
+    depends_on:
+      - db
     env_file:
-      - ./api/.env
-      - ./api/.env.dev
+      - .env
+    labels:
+      ofelia.enabled: "true"
+      ofelia.job-exec.delete-expired-tokens.schedule: "@daily"
+      ofelia.job-exec.delete-expired-tokens.command: "php bin/console app:api-token:delete-expired"
   db:
     image: postgres:17-alpine
     environment:
       POSTGRES_DB: api
-      POSTGRES_PASSWORD: api
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_USER: api
     ports:
       - 5432:5432
@@ -23,6 +28,13 @@ services:
       start_period: 60s
     volumes:
       - database_data:/var/lib/postgresql/data:rw
+  ofelia:
+    image: mcuadros/ofelia:latest
+    depends_on:
+      - api
+    command: daemon --docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   database_data:
