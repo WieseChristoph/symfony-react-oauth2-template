@@ -51,7 +51,7 @@ class AuthController extends AbstractController
     public function logout(Request $request): RedirectResponse
     {
         $response = $this->redirect($request->headers->get('referer') ?? '/');
-        $response->headers->removeCookie(CookieAccessTokenExtractor::AUTH_COOKIE_NAME);
+        $response->headers->clearCookie(CookieAccessTokenExtractor::AUTH_COOKIE_NAME);
 
         $user = $this->getUser();
         if ($user === null) {
@@ -70,9 +70,6 @@ class AuthController extends AbstractController
 
         $this->entityManager->remove($apiToken);
         $this->entityManager->flush();
-
-        $response = $this->redirect($request->headers->get('referer') ?? '/');
-        $response->headers->removeCookie(CookieAccessTokenExtractor::AUTH_COOKIE_NAME);
 
         return $response;
     }
