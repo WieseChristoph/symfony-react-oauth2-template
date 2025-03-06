@@ -1,15 +1,42 @@
 services:
+  traefik:
+    image: traefik:v3.2
+    command:
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --entryPoints.web.address=:8080
+    ports:
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+  frontend:
+    build:
+      context: ./.docker
+      dockerfile: NodePNPM.Dockerfile
+    command: sh -c "pnpm install && pnpm run dev --port 80 --host"
+    depends_on:
+      - api
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    labels:
+      traefik.enable: true
+      traefik.http.routers.frontend.rule: Host(`localhost`) && !PathPrefix(`/api`)
+      traefik.http.routers.frontend.entrypoints: web
+      traefik.http.services.frontend.loadbalancer.server.port: 80
   api:
     build: ./api
     volumes:
       - ./api:/var/www/app
-    ports:
-      - 8080:8080
     depends_on:
       - db
     env_file:
       - .env
     labels:
+      traefik.enable: true
+      traefik.http.routers.api.rule: Host(`localhost`) && PathPrefix(`/api`)
+      traefik.http.routers.api.entrypoints: web
+      traefik.http.services.api.loadbalancer.server.port: 80
       ofelia.enabled: "true"
       ofelia.job-exec.delete-expired-tokens.schedule: "@daily"
       ofelia.job-exec.delete-expired-tokens.command: "php bin/console app:api-token:delete-expired"

@@ -3,7 +3,7 @@ async function apiRequest(
 	method: "GET" | "POST" | "PUT" | "DELETE",
 	body?: unknown,
 ) {
-	const res = await fetch(path, {
+	const res = await fetch(`/api/${path}`.replace("//", "/"), {
 		method,
 		headers: { "Content-Type": "application/json" },
 		credentials: "include",
