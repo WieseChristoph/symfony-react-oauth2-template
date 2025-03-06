@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -22,21 +23,26 @@ class User implements UserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER)]
+    #[Groups('user:read')]
     private int $id;
 
     #[Email]
     #[NotBlank]
     #[ORM\Column(type: Types::STRING, unique: true)]
+    #[Groups('user:read')]
     private string $email;
 
     #[ORM\Column(type: Types::STRING)]
+    #[Groups('user:read')]
     private string $username;
 
     #[ORM\Column(type: Types::STRING, nullable: true)]
+    #[Groups('user:read')]
     private ?string $avatarUrl = null;
 
     /** @var list<string> The user roles */
     #[ORM\Column(type: Types::JSON)]
+    #[Groups('user:read')]
     private array $roles = [];
 
     /** @var Collection<int, ApiToken> */
@@ -44,6 +50,7 @@ class User implements UserInterface
     private Collection $apiTokens;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    #[Groups('user:read')]
     private CarbonImmutable $createdAt;
 
     public function __construct()

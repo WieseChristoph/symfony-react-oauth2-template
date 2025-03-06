@@ -23,6 +23,9 @@ security:
             provider: app_user_provider
             access_token:
                 token_handler: App\Security\ApiTokenHandler
+                token_extractors:
+                    - header
+                    - App\Security\CookieAccessTokenExtractor
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall

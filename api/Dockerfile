@@ -52,7 +52,7 @@ RUN useradd --shell /bin/bash api
 # Copy composer from the composer image
 COPY --from=builder /usr/bin/composer /usr/bin/composer
 
-COPY ./config/docker/nginx/default.conf /etc/nginx/conf.d/
+COPY ./config/docker/nginx/default.conf /etc/nginx/sites-available/default
 COPY ./config/docker/php/fpm-pool.conf /etc/php/8.3/fpm/pool.d/www.conf
 COPY ./config/docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
@@ -63,6 +63,6 @@ USER api:api
 COPY --chown=api:api --from=builder /app/vendor .
 COPY --chown=api:api . /var/www/app/
 
-EXPOSE 8080
+EXPOSE 80
 
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
